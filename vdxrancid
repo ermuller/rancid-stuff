@@ -266,6 +266,8 @@ sub ShowChass {
 
     while (<INPUT>) {
 	tr/\015//d;
+	# This shouldn't be necessary.  But use of \n in ProcessHistory
+	# seems inconsistent.  TODO: standardize.
 	chomp;
 	last if (/^$prompt/);
 	next if (/^(\s*|\s*$cmd\s*)$/);
@@ -337,7 +339,7 @@ sub DirSlotN {
 	    s/^$1\s{$len}//;
 	}
 
-	ProcessHistory("FLASH","","","!Flash: $dev: $_");
+	ProcessHistory("FLASH","","","!Flash: $_");
     }
     ProcessHistory("","","","!\n");
     return(0);
@@ -347,7 +349,7 @@ sub DirSlotN {
 sub ShowInventory {
     print STDERR "    In ShowInventory: $_" if ($debug);
 
-    ProcessHistory("INVENTORY","","","!show inventory:");
+    ProcessHistory("INVENTORY","","","!show inventory:\n");
     while (<INPUT>) {
 	tr/\015//d;
 	chomp;
@@ -879,8 +881,7 @@ ProcessHistory("COMMENTS","keysort","F0","!\n");
 ProcessHistory("COMMENTS","keysort","G0","!\n");
 TOP: while(<INPUT>) {
     tr/\015//d;
-#    if (/[>#]\s?exit$/) {
-	if (/Connection to [^ ]+ closed\.$/) {
+    if (/[>#]\s?(quit|exit)\s*$/) {
 	$clean_run = 1;
 	last;
     }
@@ -911,6 +912,18 @@ TOP: while(<INPUT>) {
 	    last TOP;
 	}
     }
+    # repeat the earlier exit check.  We'll miss this line if our last
+    # command (show run) doesn't have an end, and we catch the prompt there
+    # as a sign of completion.
+    # TODO: can we move that to only check here?  May still need the pre-screen
+    # in case last command does exit cleanly - otherwise it'll look like
+    # an unexpected command.
+    if (/[>#]\s?(quit|exit)\s*$/) {
+	#if (/Connection to [^ ]+ closed\.$/) {
+	print STDERR ("$host 2nd cleancheck: saw finish: $_") if ($debug);
+	$clean_run = 1;
+	last;
+    }
 }
 print STDOUT "Done $logincmd: $_\n" if ($log);
 # Flush History
@@ -929,10 +942,14 @@ if (scalar(%commands) || !$clean_run || !$found_end) {
 	printf(STDOUT "$host: missed cmd(s): %s\n", join(',', keys(%commands)));
 	printf(STDERR "$host: missed cmd(s): %s\n", join(',', keys(%commands))) if ($debug);
     }
-    if (!$clean_run || !$found_end) {
+    if (!$found_end) {
 	print STDOUT "$host: End of run not found\n";
 	print STDERR "$host: End of run not found\n" if ($debug);
 	system("/usr/bin/tail -1 $host.new");
+    }
+    if (!$clean_run ) {
+	print STDOUT "$host: Clean run not found\n";
+	print STDERR "$host: Clean run not found\n" if ($debug);
     }
     unlink "$host.new" if (! $debug);
 }
