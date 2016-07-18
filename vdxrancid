@@ -270,7 +270,7 @@ sub ShowChass {
 	chomp;
 	last if (/^$prompt/);
 	next if (/^(\s*|\s*$cmd\s*)$/);
-	next if (/^Update:\s*Day:/); # bug in output - should that be a chassis subrev? TODO: check if present in versions other than 4.0.0
+	next if (/^Update:\s*Day:/); # bug in output - should that be a chassis subrev? Shows as current date. TODO: check if present in versions other than 4.0.0
 	return(1) if (/(Invalid (input|command) detected|Type help or )/i);
 	next if (/^-+\^\s*$/);
 	return(1) if (/syntax error: unknown argument./);
