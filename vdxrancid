@@ -22,7 +22,6 @@ $debug = $opt_d;
 $file = $opt_f;
 $host = $ARGV[0];
 $proc = "";
-$ios = "IOS";
 $clean_run = 0;
 $found_end = 0;
 $found_version = 0;
@@ -32,7 +31,6 @@ $timeo = 90;				# clogin timeout in seconds
 
 my(@commandtable, %commands, @commands);# command lists
 my($aclsort) = ("ipsort");		# ACL sorting mode
-my($config_register);			# configuration register value
 my($filter_commstr);			# SNMP community string filtering
 my($filter_pwds);			# password filtering mode
 
@@ -267,80 +265,7 @@ sub ShowChass {
     return(0);
 }
 
-
-# This routine parses "show boot"
-sub ShowBoot {
-    # Pick up boot variables if 7000/7200/7500/12000/2900/3500;
-    # otherwise pick up bootflash.
-    print STDERR "    In ShowBoot: $_" if ($debug);
-
-    while (<INPUT>) {
-	tr/\015//d;
-	last if (/^$prompt/);
-	next if (/^(\s*|\s*$cmd\s*)$/);
-	return(1) if (/^\s*\^\s*$/);
-	return(1) if (/Line has invalid autocommand /);
-	return(1) if (/(Invalid (input|command) detected|Type help or )/i);
-	return(1) if (/Ambiguous command/i);
-	return(1) if (/(Open device \S+ failed|Error opening \S+:)/);
-	return(-1) if (/command authorization failed/i);
-	# the pager can not be disabled per-session on the PIX
-	if (/^(<-+ More -+>)/) {
-	    my($len) = length($1);
-	    s/^$1\s{$len}//;
-	}
-
-	next if /CONFGEN variable/;
-	if (!defined($H0)) {
-	    $H0 = 1; ProcessHistory("COMMENTS","keysort","H0","!\n");
-	}
-	if ($type !~ /^(12[04]|7)/) {
-	    if ($type !~ /^(29|35)00/) {
-		ProcessHistory("COMMENTS","keysort","H2","!BootFlash: $_");
-	    } else {
-		ProcessHistory("COMMENTS","keysort","H1","!Variable: $_");
-	    }
-	} elsif (/(variable|register)/) {
-	    ProcessHistory("COMMENTS","keysort","H1","!Variable: $_");
-	}
-    }
-    ProcessHistory("COMMENTS","","","!\n");
-    return(0);
-}
-
-# This routine parses "show flash"
-sub ShowFlash {
-    # skip if this is 7000, 7200, 7500, or 12000; else we end up with
-    # redundant data from dir /all slot0:
-    print STDERR "    In ShowFlash: $_" if ($debug);
-
-    while (<INPUT>) {
-	tr/\015//d;
-	last if (/^$prompt/);
-	next if (/^(\s*|\s*$cmd\s*)$/);
-	return(1) if ($type =~ /^(12[40]|7)/);
-	return(1) if ($ios eq "XE");
-	return(1) if (/^\s*\^\s*$/);
-	return(1) if (/Line has invalid autocommand /);
-	return(1) if (/(Invalid (input|command) detected|Type help or )/i);
-	return(-1) if (/command authorization failed/i);
-	# the pager can not be disabled per-session on the PIX
-	if (/^(<-+ More -+>)/) {
-	    my($len) = length($1);
-	    s/^$1\s{$len}//;
-	}
-
-	# Filter dhcp database
-	next if (/dhcp_[^. ]*\.txt/);
-
-	/\s+(multiple-fs|nv_hdr|vlan\.dat)$/ && next;
-	ProcessHistory("FLASH","","","!Flash: $_");
-    }
-    ProcessHistory("","","","!\n");
-    return;
-}
-
-# This routine parses "dir /all ((disk|slot)N|bootflash|nvram):"
+# This routine parses "dir" (just the primary disk device on vdx)
 sub DirSlotN {
     print STDERR "    In DirSlotN: $_" if ($debug);
 
@@ -397,36 +322,6 @@ sub DirSlotN {
 	ProcessHistory("FLASH","","","!Flash: $dev: $_");
     }
     ProcessHistory("","","","!\n");
-    return(0);
-}
-
-
-# This routine parses "show debug"
-sub ShowDebug {
-    print STDERR "    In ShowDebug: $_" if ($debug);
-    my($lines) = 0;
-
-    while (<INPUT>) {
-	tr/\015//d;
-	last if (/^$prompt/);
-	next if (/^(\s*|\s*$cmd\s*)$/);
-	return(1) if (/Line has invalid autocommand /);
-	return(1) if (/(Invalid (input|command) detected|Type help or )/i);
-	return(-1) if (/command authorization failed/i);
-	# the pager can not be disabled per-session on the PIX
-	if (/^(<-+ More -+>)/) {
-	    my($len) = length($1);
-	    s/^$1\s{$len}//;
-	}
-
-	/^No matching debug flags set$/ && next;
-	/^No debug flags set$/ && next;
-	ProcessHistory("COMMENTS","keysort","J1","!DEBUG: $_");
-	$lines++;
-    }
-    if ($lines) {
-	ProcessHistory("COMMENTS","keysort","J0","!\n");
-    }
     return(0);
 }
 
@@ -568,18 +463,10 @@ sub WriteTerm {
 	return(0) if ($found_end);		# Only do this routine once
 	return(-1) if (/command authorization failed/i);
 	return(-1) if (/% ?configuration buffer full/i);
-	# the pager can not be disabled per-session on the PIX
-	if (/^(<-+ More -+>)/) {
-	    my($len) = length($1);
-	    s/^$1\s{$len}//;
-	}
 	/^! no configuration change since last restart/i && next;
 	# skip emtpy lines at the beginning
 	if (!$linecnt && /^\s*$/) {
 	    next;
-	}
-	if (!$linecnt && defined($config_register)) {
-	    ProcessHistory("","","", "!\nconfig-register $config_register\n");
 	}
 
 	/Non-Volatile memory is in use/ && return(-1); # NvRAM is locked
@@ -597,13 +484,9 @@ sub WriteTerm {
 	    }
 	    tr/\015//d;
 	}
-	# skip ASA 5520 configuration author line
-	/^: written by /i && next;
 	# some versions have other crap mixed in with the bits in the
 	# block above
 	/^! (Last configuration|NVRAM config last)/ && next;
-	# and for the ASA
-	/^: (Written by \S+ at|Saved)/ && next;
 
 	# skip consecutive comment lines to avoid oscillating extra comment
 	# line on some access servers.  grrr.
@@ -652,17 +535,6 @@ sub WriteTerm {
 	    }
 	    next;
 	}
-	# cisco AP w/ IOS
-	if (/^(wlccp \S+ username (\S+)(\s.*)? password) (\d \S+|\S+)/) {
-	    if ($filter_pwds >= 1) {
-		ProcessHistory("USER","keysort","$2","!$1 <removed>\n");
-	    } else {
-		ProcessHistory("USER","keysort","$2","$_");
-	    }
-	    next;
-	}
-	# filter auto "rogue ap" configuration lines
-	/^rogue ap classify / && next;
 	if (/^( set session-key (in|out)bound ah \d+ )/ && $filter_pwds >= 1) {
 	    ProcessHistory("","","","!$1<removed>\n");
 	    next;
@@ -847,9 +719,6 @@ sub WriteTerm {
 	    && $filter_pwds >= 1) {
 	    ProcessHistory("","","","!$1 <removed>$'"); next;
 	}
-	# order clns host statements
-	/^clns host \S+ (\S+)/ &&
-	    ProcessHistory("CLNS","keysort","$1","$_") && next;
 	# order alias statements
 	/^alias / && ProcessHistory("ALIAS","keysort","$_","$_") && next;
 	# delete ntp auth password - this md5 is a reversable too
@@ -912,17 +781,9 @@ sub DoNothing {print STDOUT;}
 	{'show version'			=> 'ShowVersion'},
 #	{'show env all'			=> 'ShowEnv'},
 	{'show chassis'			=> 'ShowChass'},
-#	{'show boot'			=> 'ShowBoot'},
-#	{'show bootvar'			=> 'ShowBoot'},
-#	{'show variables boot'		=> 'ShowBoot'},
-#	{'show flash'			=> 'ShowFlash'},
-#	{'dir /all bootflash:'		=> 'DirSlotN'},
-#	{'show module'			=> 'ShowModule'},	# cat 6500-ios
 	{'show inventory'		=> 'ShowInventory'},
 #	{'show vlan brief'		=> 'ShowVLAN'},
 #	{'show vlan-switch'		=> 'ShowVLAN'},
-#	{'show debug'			=> 'ShowDebug'},
-#	{'more system:running-config'	=> 'WriteTerm'},	# ASA/PIX
 	{'show running-config'		=> 'WriteTerm'},
 #	{'write term'			=> 'WriteTerm'},
 );
