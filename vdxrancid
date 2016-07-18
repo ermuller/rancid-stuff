@@ -141,7 +141,6 @@ sub ShowVersion {
 
     while (<INPUT>) {
 	tr/\015//d;
-	chomp;
 	if (/^$prompt/) { $found_version = 1; last};
 	next if (/^(\s*|\s*$cmd\s*)$/);
 	return(1) if (/Line has invalid autocommand /);
@@ -152,7 +151,7 @@ sub ShowVersion {
 	return(-1) if (/command authorization failed/i);
 
 	if (/^Network Operating System/) { $type = "NOS"; }
-	ProcessHistory("COMMENTS","","","!Version: $_\n");
+	ProcessHistory("COMMENTS","","","!Version: $_");
 
     }
     return(0);
@@ -789,7 +788,6 @@ sub WriteTerm {
     # The VDX (at least in some versions) lacks a definitive "end of config"
     # marker.  If we know that it is a VDX and we have seen at least 10 lines
     # of write term output, we can be reasonably sure that we got the config.
-print STDERR "writeterm debug: type $type, lines $linecnt\n";
     if (($type == "NOS") && $linecnt > 10) {
 	$found_end = 1;
 	return(0);
