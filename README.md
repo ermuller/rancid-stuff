@@ -4,3 +4,14 @@ My goal is to get this cleaned up and submitted back into mainline rancid.
 This code is copyleft per the standard rancid license terms.
 
 Please note that this is a work in progress, and is not intended for long-term support.  If you're using this code from this source, you're doing so at your own risk (it works for me, but is likely to become outdated quickly, and it hasn't been widely tested.  But if you do use it, I'd appreciate feedback.
+
+
+Also, basic aerohive support is added here via the "ahlogin" and "ahrancid"
+scripts.
+Based on clogin/rancid from 2.3.8.
+login diffs are mainly just to send "console page 0" and to handle the
+"config changed, save?" prompts.
+This has been running in production for several years, though only
+on a single deployment of AH170s - other models should work, but have
+not been tested.
+
