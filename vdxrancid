@@ -238,6 +238,28 @@ sub ShowEnv {
     return(0);
 }
 
+# This routine parses "show license *"
+sub ShowLicense {
+    print STDERR "    In ShowLicense: $_" if ($debug);
+
+    while (<INPUT>) {
+	tr/\015//d;
+	last if (/^$prompt/);
+	next if (/^(\s*|\s*$cmd\s*)$/);
+	return(1) if /(Invalid input detected|Type help or )/;
+	return(1) if (/\% Invalid command at /);
+	next if (/^-+\^\s*$/);
+	return(1) if (/syntax error: unknown argument./);
+	return(-1) if (/\% Permission denied/);
+	return(-1) if (/command authorization failed/i);
+
+	ProcessHistory("COMMENTS","","", "!LIC: $_");
+    }
+    ProcessHistory("COMMENTS","","","!\n");
+    return(0);
+}
+
+
 # This routine parses "show chassis" for the switch
 sub ShowChass {
     print STDERR "    In ShowChass: $_" if ($debug);
@@ -781,8 +803,13 @@ sub DoNothing {print STDOUT;}
 @commandtable = (
 	{'show version'			=> 'ShowVersion'},
 #	{'show env all'			=> 'ShowEnv'},
+	{'show env power'		=> 'ShowEnv'},
+	{'show env history'		=> 'ShowEnv'},
 	{'show chassis'			=> 'ShowChass'},
 	{'show inventory'		=> 'ShowInventory'},
+	{'show license id'		=> 'ShowLicense'},
+	{'show license'			=> 'ShowLicense'},
+	{'dir'				=> 'DirSlotN'},
 #	{'show vlan brief'		=> 'ShowVLAN'},
 #	{'show vlan-switch'		=> 'ShowVLAN'},
 	{'show running-config'		=> 'WriteTerm'},
@@ -879,6 +906,7 @@ TOP: while(<INPUT>) {
 	$rval = &{$commands{$cmd}};
 	delete($commands{$cmd});
 	if ($rval == -1) {
+	    print STDERR "$host: command \"$cmd\" unclean\n" if ($debug);
 	    $clean_run = 0;
 	    last TOP;
 	}
