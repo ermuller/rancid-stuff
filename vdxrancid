@@ -169,11 +169,6 @@ sub ShowRedundancy {
 	return(1) if (/(Invalid (input|command) detected|Type help or )/i);
 	next if (/^-+\^\s*$/);
 	return(1) if (/syntax error: unknown argument./);
-	# the pager can not be disabled per-session on the PIX
-	if (/^(<-+ More -+>)/) {
-	    my($len) = length($1);
-	    s/^$1\s{$len}//;
-	}
 
 	if (/^Version information for secondary in slot (\d+):/) {
 	    $slave = " Slave:";
@@ -194,7 +189,6 @@ sub ShowRedundancy {
 
 # This routine parses "show env all"
 sub ShowEnv {
-    # Skip if this is not a 7500, 7200, or 7000.
     print STDERR "    In ShowEnv: $_" if ($debug);
 
     undef($E0);
@@ -214,7 +208,7 @@ sub ShowEnv {
 	    ProcessHistory("COMMENTS","keysort","E0","! $cmd\n");
 	}
 	/^(Fan|Power|Factory)/i &&
-	ProcessHistory("COMMENTS","keysort","E1","! $_");
+	    ProcessHistory("COMMENTS","keysort","E1","! $_");
     }
     ProcessHistory("COMMENTS","","","!\n");
     return(0);
@@ -322,11 +316,6 @@ sub Dir {
 	if (/^((\s+)?\d+\s+\S+)\s+\d+.*(sflog$)/) {
 	    $_ = "$1" . sprintf("%43s", "") . "$3\n";
 	}
-	# the pager can not be disabled per-session on the PIX
-	if (/^(<-+ More -+>)/) {
-	    my($len) = length($1);
-	    s/^$1\s{$len}//;
-	}
 
 	ProcessHistory("FLASH","","","!Flash: $_");
     }
@@ -350,11 +339,6 @@ sub ShowInventory {
 	next if (/^-+\^\s*$/);
 	return(1) if (/syntax error: unknown argument./);
 	return(-1) if (/command authorization failed/i);
-	# the pager can not be disabled per-session on the PIX
-	if (/^(<-+ More -+>)/) {
-	    my($len) = length($1);
-	    s/^$1\s{$len}//;
-	}
 
 	if (/^(NAME: "[^"]*",) (DESCR: "[^"]+")/) {
 	    ProcessHistory("INVENTORY","","", sprintf("!%-30s %s\n", $1, $2));
@@ -392,11 +376,6 @@ sub ShowModule {
 	last if (/^$prompt/);
 	next if (/^(\s*|\s*$cmd\s*)$/);
 	return(-1) if (/command authorization failed/i);
-	# the pager can not be disabled per-session on the PIX
-	if (/^(<-+ More -+>)/) {
-	    my($len) = length($1);
-	    s/^$1\s{$len}//;
-	}
 
 	# match slot/card info line
 	if (/^ *(\d+)\s+(\d+)\s+(.*)\s+(\S+)\s+(\S+)\s*$/) {
@@ -447,11 +426,6 @@ sub ShowVLAN {
 	return(1) if (/(Invalid (input|command) detected|Type help or )/i);
 	return(1) if (/Ambiguous command/i);
 	return(-1) if (/command authorization failed/i);
-	# the pager can not be disabled per-session on the PIX
-	if (/^(<-+ More -+>)/) {
-	    my($len) = length($1);
-	    s/^$1\s{$len}//;
-	}
 
 	ProcessHistory("COMMENTS","keysort","IO","!VLAN: $_");
     }
@@ -462,7 +436,7 @@ sub ShowVLAN {
 # This routine processes a "write term"
 sub WriteTerm {
     print STDERR "    In WriteTerm: $_" if ($debug);
-    my($lineauto,$comment,$linecnt) = (0,0,0);
+    my($comment,$linecnt) = (0,0);
 
     while (<INPUT>) {
 	tr/\015//d;
@@ -492,7 +466,6 @@ sub WriteTerm {
 		next if (/^Current configuration\s*:/i);
 		next if (/^:/);
 		next if (/^([%!].*|\s*)$/);
-		next if (/^ip add.*ipv4:/);	# band-aid for 3620 12.0S
 		last;
 	    }
 	    tr/\015//d;
@@ -512,13 +485,6 @@ sub WriteTerm {
 	$comment = 0;
 
 	# Dog gone Cool matches to process the rest of the config
-	/^tftp-server flash /   && next; # kill any tftp remains
-	/^ntp clock-period /    && next; # kill ntp clock-period
-	/^ length /		&& next; # kill length on serial lines
-	/^ width /		&& next; # kill width on serial lines
-	$lineauto = 1 if /^ modem auto/;
-	/^ speed / && $lineauto	&& next; # kill speed on serial lines
-	/^ clockrate /		&& next; # kill clockrate on serial interfaces
 	if (/^(enable )?(password|passwd)( level \d+)? / && $filter_pwds >= 1) {
 	    ProcessHistory("ENABLE","","","!$1$2$3 <removed>\n");
 	    next;
@@ -548,15 +514,6 @@ sub WriteTerm {
 	    }
 	    next;
 	}
-	if (/^( set session-key (in|out)bound ah \d+ )/ && $filter_pwds >= 1) {
-	    ProcessHistory("","","","!$1<removed>\n");
-	    next;
-	}
-	if (/^( set session-key (in|out)bound esp \d+ (authenticator|cypher) )/
-	    && $filter_pwds >= 1) {
-	    ProcessHistory("","","","!$1<removed>\n");
-	    next;
-	}
 	if (/^(\s*)password / && $filter_pwds >= 1) {
 	    ProcessHistory("LINE-PASS","","","!$1password <removed>\n");
 	    next;
@@ -569,22 +526,18 @@ sub WriteTerm {
 	    ProcessHistory("","","","! neighbor $1 password <removed>\n");
 	    next;
 	}
-	if (/^(ppp .* password) 7 .*/ && $filter_pwds >= 1) {
-	    ProcessHistory("","","","!$1 <removed>\n"); next;
-	}
-	if (/^(ip ftp password) / && $filter_pwds >= 1) {
-	    ProcessHistory("","","","!$1 <removed>\n"); next;
-	}
 	if (/^( ip ospf authentication-key) / && $filter_pwds >= 1) {
 	    ProcessHistory("","","","!$1 <removed>\n"); next;
-	}
-	# isis passwords appear to be completely plain-text
-	if (/^\s+isis password (\S+)( .*)?/ && $filter_pwds >= 1) {
-	    ProcessHistory("","","","!isis password <removed>$2\n"); next;
 	}
 	if (/^\s+(domain-password|area-password) (\S+)( .*)?/
 							&& $filter_pwds >= 1) {
 	    ProcessHistory("","","","!$1 <removed>$3\n"); next;
+	}
+	if (/^( ip ospf md5.* key \d+) \S+/ && $filter_pwds >= 1) {
+	    ProcessHistory("","","","!$1 <removed>\n"); next;
+	}
+	if (/^( ip ospf authentication-key \d+) \S+/ && $filter_pwds >= 1) {
+	    ProcessHistory("","","","!$1 <removed>\n"); next;
 	}
 	# this is reversable, despite 'md5' in the cmd
 	if (/^( ip ospf message-digest-key \d+ md5) / && $filter_pwds >= 1) {
@@ -594,60 +547,6 @@ sub WriteTerm {
 	if (/^(  message-digest-key \d+ md5 (7|encrypted)) /
 	    && $filter_pwds >= 1) {
 	    ProcessHistory("","","","!$1 <removed>\n"); next;
-	}
-	if (/^((crypto )?isakmp key) \S+ / && $filter_pwds >= 1) {
-	    ProcessHistory("","","","!$1 <removed> $'"); next;
-	}
-	# filter HSRP passwords
-	if (/^(\s+standby \d+ authentication) / && $filter_pwds >= 1) {
-	    ProcessHistory("","","","!$1 <removed>\n"); next;
-	}
-	# this appears in "measurement/sla" images
-	if (/^(\s+key-string \d?)/ && $filter_pwds >= 1) {
-	    ProcessHistory("","","","!$1 <removed>\n"); next;
-	}
-	if (/^( l2tp tunnel \S+ password)/ && $filter_pwds >= 1) {
-	    ProcessHistory("","","","!$1 <removed>\n"); next;
-	}
-	# i am told these are plain-text on the PIX
-	if (/^(vpdn username (\S+) password)/) {
-	    if ($filter_pwds >= 1) {
-		ProcessHistory("USER","keysort","$2","!$1 <removed>\n");
-	    } else {
-		ProcessHistory("USER","keysort","$2","$_");
-	    }
-	    next;
-	}
-	# ASA/PIX keys in more system:running-config
-	if (/^( pre-shared-key | key |failover key ).*/ && $filter_pwds >= 1) {
-	    ProcessHistory("","","","!$1 <removed> $'"); next;
-	}
-	if (/(\s+ldap-login-password )\S+(.*)/ && $filter_pwds >= 1) {
-	    ProcessHistory("","","","!$1 <removed> $'"); next;
-	}
-	#
-	if (/^( cable shared-secret )/ && $filter_pwds >= 1) {
-	    ProcessHistory("","","","!$1 <removed>\n");
-	    next;
-	}
-	/fair-queue individual-limit/ && next;
-	# sort ip explicit-paths.
-	if (/^ip explicit-path name (\S+)/) {
-	    my($key) = $1;
-	    my($expath) = $_;
-	    while (<INPUT>) {
-		tr/\015//d;
-		last if (/^$prompt/);
-		last if (/^$prompt/ || ! /^(ip explicit-path name |[ !])/);
-		if (/^ip explicit-path name (\S+)/) {
-		    ProcessHistory("EXPATH","keysort","$key","$expath");
-		    $key = $1;
-		    $expath = $_;
-		} else  {
-		    $expath .= $_;
-		}
-	    }
-	    ProcessHistory("EXPATH","keysort","$key","$expath");
 	}
 	# sort route-maps
 	if (/^route-map (\S+)/) {
@@ -735,8 +634,8 @@ sub WriteTerm {
 	# order alias statements
 	/^alias / && ProcessHistory("ALIAS","keysort","$_","$_") && next;
 	# delete ntp auth password - this md5 is a reversable too
-	if (/^(ntp authentication-key \d+ md5) / && $filter_pwds >= 1) {
-	    ProcessHistory("","","","!$1 <removed>\n"); next;
+	if (/^(ntp authentication-key \d+ (?:md5|sha1)) \S+ (encryption-level \d+)/ && $filter_pwds >= 1) {
+	    ProcessHistory("","","","!$1 <removed> $2\n"); next;
 	}
 	# order ntp peers/servers
 	if (/^ntp (server|peer) (\d+)\.(\d+)\.(\d+)\.(\d+)/) {
@@ -756,21 +655,10 @@ sub WriteTerm {
 	# order ip rcmd lines
 	/^ip rcmd/ && ProcessHistory("RCMD","keysort","$_","$_") && next;
 
-	# system controller
-	/^syscon address (\S*) (\S*)/ &&
-	    ProcessHistory("","","","!syscon address $1 <removed>\n") &&
-	    next;
-	if (/^syscon password (\S*)/ && $filter_pwds >= 1) {
-	    ProcessHistory("","","","!syscon password <removed>\n");
-	    next;
-	}
-
-	/^ *Cryptochecksum:/ && next;
-
 	# catch anything that wasnt matched above.
 	ProcessHistory("","","","$_");
-	# end of config.  the ": " game is for the PIX
-	if (/^(: +)?end$/) {
+	# end of config.
+	if (/^end$/) {
 	    $found_end = 1;
 	    return(0);
 	}
