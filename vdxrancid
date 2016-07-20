@@ -7,7 +7,7 @@
 #@copyright@
 
 #  VDXRANCID - A terribly hacked version of RANCID to work on Brocade VDX 
-#  nick@buraglio.com
+#  originally nick@buraglio.com, updated by erikm@buh.org
 #
 # usage: rancid [-dV] [-l] [-f filename | hostname]
 #
@@ -152,8 +152,8 @@ sub ShowVersion {
 
 	if (/^Network Operating System/) { $type = "NOS"; }
 	ProcessHistory("COMMENTS","","","!Version: $_");
-
     }
+    print STDERR "TYPE = $type\n" if ($debug);
     return(0);
 }
 
@@ -243,12 +243,9 @@ sub ShowChass {
     ProcessHistory("COMMENTS","","","!\n");
     while (<INPUT>) {
 	tr/\015//d;
-	# This shouldn't be necessary.  But use of \n in ProcessHistory
-	# seems inconsistent.  TODO: standardize.
-	chomp;
 	last if (/^$prompt/);
 	next if (/^(\s*|\s*$cmd\s*)$/);
-	next if (/^Update:\s*Day:/); # bug in output - should that be a chassis subrev? Shows as current date. TODO: check if present in versions other than 4.0.0
+	next if (/^Update:\s*Day:/); # bug in output: Shows as current date. TODO: check if fixed in versions other than 4.0.x
 	return(1) if (/(Invalid (input|command) detected|Type help or )/i);
 	next if (/^-+\^\s*$/);
 	return(1) if (/syntax error: unknown argument./);
@@ -256,15 +253,7 @@ sub ShowChass {
 	/^$/ && next;
 
 	next if (/^Time (Alive|Awake):/);
-	/^\s+Chassis model: (\S+)/ &&
-	    ProcessHistory("COMMENTS","keysort","D1",
-				"!RSP Chassis model: $1\n") &&
-	    next;
-	/^\s+Chassis S\/N: (.*)$/ &&
-	    ProcessHistory("COMMENTS","keysort","D2",
-				"!RSP Chassis S/N: $1\n") &&
-	    next;
-	ProcessHistory("COMMENTS","","","!Chassis: $_\n");
+	ProcessHistory("COMMENTS","","","!Chassis: $_");
     }
 
     return(0);
@@ -296,7 +285,7 @@ sub Dir {
 
 	if (/(.*)\((\d+)\s+bytes free\)/) {
 	    my($tmp) = $2;
-    	    if ($type == "NOS") {
+	    if ($type == "NOS") {
 		# even with rounding free space changes periodically - so skip it
 		s/\s*\(\d+\s+bytes free\)//;
 	    } else {
@@ -304,7 +293,7 @@ sub Dir {
 		if ($tmp >= (1024 * 1024 * 1024)) {
 		    $tmp = int($tmp / (1024 * 1024 * 1024));
 		    s/$2\s+bytes free/$tmp GB free/;
-		} else { 
+		} else {
 		    $tmp = int($tmp / (1024 * 1024));
 		    s/$2\s+bytes free/$tmp MB free/;
 		}
@@ -330,7 +319,6 @@ sub ShowInventory {
     ProcessHistory("INVENTORY","","","!show inventory:\n");
     while (<INPUT>) {
 	tr/\015//d;
-	chomp;
 	return if (/^\s*\^$/);
 	last if (/^$prompt/);
 	next if (/^(\s*|\s*$cmd\s*)$/);
@@ -344,16 +332,15 @@ sub ShowInventory {
 	    ProcessHistory("INVENTORY","","", sprintf("!%-30s %s\n", $1, $2));
 	    next;
 	}
-	# split PID/VID/SN line
-	if (/^PID: (\S*)\s*,\s*VID: (\S*)\s*,\s*SN: (\S*)\s*$/) {
+	# split PN/SN line
+	if (/^PN:(\S*)\s*SN:(\S*)\s*$/) {
 	    my($entries) = "";
-	    $entries .= "!PID: $1\n" if ($1);
-	    $entries .= "!VID: $2\n" if ($2);
-	    $entries .= "!SN: $3\n" if ($3);
+	    $entries .= "! PN: $1\n" if ($1 && $1 ne "N/A");
+	    $entries .= "! SN: $2\n" if ($2 && $1 ne "N/A");
 	    ProcessHistory("INVENTORY","","", "$entries");
 	    next;
 	}
-	ProcessHistory("INVENTORY","","","! $_\n");
+	ProcessHistory("INVENTORY","","","!$_");
     }
     ProcessHistory("INVENTORY","","","!\n");
 
@@ -786,14 +773,12 @@ TOP: while(<INPUT>) {
 	}
     }
     # repeat the earlier exit check.  We'll miss this line if our last
-    # command (show run) doesn't have an end, and we catch the prompt there
-    # as a sign of completion.
-    # TODO: can we move that to only check here?  May still need the pre-screen
-    # in case last command does exit cleanly - otherwise it'll look like
-    # an unexpected command.
+    # command (show run) doesn't have an "end", and we catch the prompt
+    # there as a sign of completion.
+    # TODO: can we move that to only check here?  May still need the
+    # pre-screen in case last command does exit cleanly - otherwise it'll
+    # look like an unexpected command.
     if (/[>#]\s?(quit|exit)\s*$/) {
-	#if (/Connection to [^ ]+ closed\.$/) {
-	print STDERR ("$host 2nd cleancheck: saw finish: $_") if ($debug);
 	$clean_run = 1;
 	last;
     }
