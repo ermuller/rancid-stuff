@@ -1,5 +1,5 @@
 # Some Rancid stuff
-This repo has a few tweaks or enhancements to rancid that aren't in the main
+This repo has a few tweaks or enhancements to [rancid](http://shrubbery.net/rancid) that aren't in the main
 distribution.  Hopefully they will be someday.  They should all work in 2.3.8 or 3.x,
 unless otherwise noted.  Sample tweaks to rancid-fe and rancid.types.conf are here, 
 but I can't provide much more support than that on how to use/integrate (ie,
