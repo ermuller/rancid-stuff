@@ -1,9 +1,10 @@
-#! /usr/bin/perl5
+#! /opt/local/bin/perl5
+#! @PERLV_PATH@
 ##
-## $Id: rancid.in 2211 2010-07-07 23:15:10Z heas $
+## $Id: alurancid.in $
 ##
-## rancid 2.3.4
-## Copyright (c) 1997-2009 by Terrapin Communications, Inc.
+## @PACKAGE@ @VERSION@
+## Copyright (c) @COPYYEARS@ by Terrapin Communications, Inc.
 ## All rights reserved.
 ##
 ## This code is derived from software contributed to and maintained by
@@ -54,7 +55,7 @@
 use Getopt::Std;
 getopts('dflV');
 if ($opt_V) {
-    print "rancid 2.3.4\n";
+    print "@PACKAGE@ @VERSION@\n";
     exit(0);
 }
 $log = $opt_l;
@@ -74,6 +75,7 @@ my(@commandtable, %commands, @commands);# command lists
 my($aclsort) = ("ipsort");		# ACL sorting mode
 my($config_register);			# configuration register value
 my($filter_commstr);			# SNMP community string filtering
+my($filter_osc);			#  oscillating data filtering mode
 my($filter_pwds);			# password filtering mode
 
 # This routine is used to print out the router configuration
@@ -348,6 +350,13 @@ if (defined($ENV{"NOCOMMSTR"}) &&
     $filter_commstr = 1;
 } else {
     $filter_commstr = 0;
+}
+
+# determine oscillating data filtering mode
+if (defined($ENV{"FILTER_OSC"}) && $ENV{"FILTER_OSC"} =~ /no/i) {
+    $filter_osc = 0;
+} else {
+    $filter_osc = 1;
 }
 # determine password filtering mode
 if ($ENV{"FILTER_PWDS"} =~ /no/i) {
