@@ -196,8 +196,31 @@ sub ShowConfig {
         next if (/^# Generated/);
         next if (/^$/); # drop empty lines
         return(1) if /(Invalid input detected|Type help or )/;
+        return(1) if /^(\s+\^|Error: (Invalid parameter|Bad command)\.)\s*$/;
+
+	if (/^(\s+community)\s+(\"\S+\")\s+(.*)$/) {
+            if ($filter_commstr) {
+                ProcessHistory("","","","#$1 <removed> $3\n") && next;
+            } else {
+                ProcessHistory("","","","$_") && next;
+            }
+        }
+	if (/^(\s+trap-target\s+.*)\s+(notify-community)\s+(\"\S+\")\s*$/) {
+            if ($filter_commstr) {
+                ProcessHistory("","","","#$1 $2 <removed>\n") && next;
+            } else {
+                ProcessHistory("","","","$_") && next;
+            }
+        }
+	if (/^(\s+password)\s+(\"\$\S+\")\s*$/) {
+            if ($filter_pwds) {
+                ProcessHistory("","","","#$1 <removed>\n") && next;
+            } else {
+                ProcessHistory("","","","$_") && next;
+            }
+        }
+
         if (/^# Finished\s*/) {
-                #ProcessHistory("","","","$_");
 		print STDERR "    Completed ShowConfig: $_" if ($debug);
                 $found_end++;
                 last;
@@ -236,11 +259,20 @@ sub ShowHw {
         tr/\015//d;
         next if (/^\s*$/); # drop empty lines
         return(1) if /(Invalid input detected|Type help or )/;
-        if (/^$prompt/) {
-                ProcessHistory("","","","!$_");
-                $found_end++;
-                last;
-        }
+	# in case some of the hardware commands aren't supported on other models
+        return(0) if /^(\s+\^|Error: (Invalid parameter|Bad command)\.)\s*$/;
+
+	# temp varies in "show card detail"
+	if (/^(\s+Temperature\s+:)\s+\d+C/) {
+		my($prefix) = $1;
+		if ($filter_osc) {
+			ProcessHistory("","","","# $prefix <removed>\n"); next;
+		} else {
+			ProcessHistory("","","","# $_\n"); next;
+		}
+	}
+
+        last if (/^$prompt/);
         # catch all output
         ProcessHistory("","","","# $_");
     }
@@ -288,11 +320,13 @@ sub DoNothing {print STDOUT;}
 
 # Main
 @commandtable = (
+       {'show card'                            => 'ShowHw'},
+       {'show card detail'                     => 'ShowHw'},
        {'show chassis environment'             => 'ShowHw'},
        {'show chassis power-supply'            => 'ShowPwr'},
-       {'admin display-config'                 => 'ShowConfig'},
        {'show system information'              => 'ShowSysinfo'},
        {'show redundancy synchronization'      => 'ShowRedSync'},
+       {'admin display-config'                 => 'ShowConfig'},
 );
 
 # Use an array to preserve the order of the commands and a hash for mapping
