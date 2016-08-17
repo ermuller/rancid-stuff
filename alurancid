@@ -47,6 +47,7 @@
 # Modified (poorly) by Nick Buraglio <nick @ buraglio.com> on 11/10/2010
 # to accommodate for the Alcatel Lucent 7750 OmniSwitch for SuperComputing 2010
 # Adjusted regex by lots of other folks but mostly leres at ee.lbl.gov
+# updated 2016 erikm@buh.org to clean up, add inventory, etc
 ####
 
 
@@ -192,11 +193,12 @@ sub ShowConfig {
         tr/\015//d;
         next if (/^(\s*|\s*$cmd\s*)$/);
 # added by leres 
-        next if (/^# (Generated|Finished)/);
+        next if (/^# Generated/);
         next if (/^$/); # drop empty lines
         return(1) if /(Invalid input detected|Type help or )/;
-        if (/^$prompt/) {
-                ProcessHistory("","","","!$_");
+        if (/^# Finished\s*/) {
+                #ProcessHistory("","","","$_");
+		print STDERR "    Completed ShowConfig: $_" if ($debug);
                 $found_end++;
                 last;
         }
@@ -217,11 +219,8 @@ sub ShowSysinfo {
         next if (/^$/); # drop empty lines
         next if (/System Up Time/);
         return(1) if /(Invalid input detected|Type help or )/;
-        if (/^$prompt/) {
-                ProcessHistory("","","","!$_");
-                $found_end++;
-                last;
-        }
+        return(1) if /^(\s+\^|Error: (Invalid parameter|Bad command)\.)\s*$/;
+        last if (/^$prompt/);
         # catch all output
         ProcessHistory("","","","# $_");
     }
@@ -235,9 +234,7 @@ sub ShowHw {
     ProcessHistory("","","","#\n# # $cmd\n");
     while (<INPUT>) {
         tr/\015//d;
-        next if (/^(\s*|\s*$cmd\s*)$/);
-        next if (/^$/); # drop empty lines
-        return(1) if /Line has invalid autocommand /;
+        next if (/^\s*$/); # drop empty lines
         return(1) if /(Invalid input detected|Type help or )/;
         if (/^$prompt/) {
                 ProcessHistory("","","","!$_");
@@ -260,11 +257,8 @@ sub ShowPwr {
         next if (/^(\s*|\s*$cmd\s*)$/);
         next if (/^$/); # drop empty lines
         return(1) if /(Invalid input detected|Type help or )/;
-        if (/^$prompt/) {
-                ProcessHistory("","","","!$_");
-                $found_end++;
-                last;
-        }
+        return(1) if /^(\s+\^|Error: (Invalid parameter|Bad command)\.)\s*$/;
+        last if (/^$prompt/);
         # catch all output
         ProcessHistory("","","","# $_");
     }
@@ -281,11 +275,8 @@ sub ShowRedSync {
         next if (/^(\s*|\s*$cmd\s*)$/);
         next if (/^$/); # drop empty lines
         return(1) if /(Invalid input detected|Type help or )/;
-        if (/^$prompt/) {
-                ProcessHistory("","","","!$_");
-                $found_end++;
-                last;
-        }
+        return(1) if /^(\s+\^|Error: (Invalid parameter|Bad command)\.)\s*$/;
+        last if (/^$prompt/);
         # catch all output
         ProcessHistory("","","","# $_");
     }
@@ -377,6 +368,9 @@ TOP: while(<INPUT>) {
     tr/\015//d;
     if (/Connection to [^ ]+ closed\.$/) {
     } elsif (/Connection closed by foreign host\.$/) {
+	$clean_run = 1;
+	last;
+    } elsif (/^$prompt\s*logout/) {
 	$clean_run = 1;
 	last;
     }
