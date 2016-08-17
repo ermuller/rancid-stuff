@@ -26,7 +26,7 @@ but not much else.
 Also, basic aerohive support is added here via the "ahlogin" and "ahrancid"
 scripts.
 These are based on clogin/rancid from 2.3.8.
-login diffs are mainly just to send "console page 0" and to handle the
+The login diffs are mainly just to send "console page 0" and to handle the
 "config changed, save?" prompts.
 
 This has been running in production for several years, though only
