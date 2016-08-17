@@ -187,13 +187,13 @@ sub sortbyipaddr {
 sub ShowConfig {
     print STDERR "    In ShowConfig: $_" if ($debug);
 
+    ProcessHistory("","","","#\n# # $cmd\n");
     while (<INPUT>) {
         tr/\015//d;
         next if (/^(\s*|\s*$cmd\s*)$/);
 # added by leres 
         next if (/^# (Generated|Finished)/);
         next if (/^$/); # drop empty lines
-        return(1) if /Line has invalid autocommand /;
         return(1) if /(Invalid input detected|Type help or )/;
         if (/^$prompt/) {
                 ProcessHistory("","","","!$_");
@@ -210,12 +210,12 @@ sub ShowConfig {
 sub ShowSysinfo {
     print STDERR "    In ShowSysinfo: $_" if ($debug);
 
+    ProcessHistory("","","","#\n# # $cmd\n");
     while (<INPUT>) {
         tr/\015//d;
         next if (/^(\s*|\s*$cmd\s*)$/);
         next if (/^$/); # drop empty lines
         next if (/System Up Time/);
-        return(1) if /Line has invalid autocommand /;
         return(1) if /(Invalid input detected|Type help or )/;
         if (/^$prompt/) {
                 ProcessHistory("","","","!$_");
@@ -223,7 +223,7 @@ sub ShowSysinfo {
                 last;
         }
         # catch all output
-        ProcessHistory("","","","$_");
+        ProcessHistory("","","","# $_");
     }
     return(0);
 }
@@ -232,6 +232,7 @@ sub ShowSysinfo {
 sub ShowHw {
     print STDERR "    In ShowHw: $_" if ($debug);
 
+    ProcessHistory("","","","#\n# # $cmd\n");
     while (<INPUT>) {
         tr/\015//d;
         next if (/^(\s*|\s*$cmd\s*)$/);
@@ -244,7 +245,7 @@ sub ShowHw {
                 last;
         }
         # catch all output
-        ProcessHistory("","","","$_");
+        ProcessHistory("","","","# $_");
     }
     return(0);
 }
@@ -253,11 +254,11 @@ sub ShowHw {
 sub ShowPwr {
     print STDERR "    In ShowPwr: $_" if ($debug);
 
+    ProcessHistory("","","","#\n# # $cmd\n");
     while (<INPUT>) {
         tr/\015//d;
         next if (/^(\s*|\s*$cmd\s*)$/);
         next if (/^$/); # drop empty lines
-        return(1) if /Line has invalid autocommand /;
         return(1) if /(Invalid input detected|Type help or )/;
         if (/^$prompt/) {
                 ProcessHistory("","","","!$_");
@@ -265,7 +266,7 @@ sub ShowPwr {
                 last;
         }
         # catch all output
-        ProcessHistory("","","","$_");
+        ProcessHistory("","","","# $_");
     }
     return(0);
 }
@@ -274,11 +275,11 @@ sub ShowPwr {
 sub ShowRedSync {
     print STDERR "    In ShowRedSync: $_" if ($debug);
 
+    ProcessHistory("","","","#\n# # $cmd\n");
     while (<INPUT>) {
         tr/\015//d;
         next if (/^(\s*|\s*$cmd\s*)$/);
         next if (/^$/); # drop empty lines
-        return(1) if /Line has invalid autocommand /;
         return(1) if /(Invalid input detected|Type help or )/;
         if (/^$prompt/) {
                 ProcessHistory("","","","!$_");
@@ -286,7 +287,7 @@ sub ShowRedSync {
                 last;
         }
         # catch all output
-        ProcessHistory("","","","$_");
+        ProcessHistory("","","","# $_");
     }
     return(0);
 }
@@ -367,11 +368,11 @@ if ($ENV{"FILTER_PWDS"} =~ /no/i) {
     $filter_pwds = 1;
 }
 
-ProcessHistory("","","","!RANCID-CONTENT-TYPE: alcatellucent\n!\n");
-ProcessHistory("COMMENTS","keysort","B0","!\n");
-ProcessHistory("COMMENTS","keysort","D0","!\n");
-ProcessHistory("COMMENTS","keysort","F0","!\n");
-ProcessHistory("COMMENTS","keysort","G0","!\n");
+ProcessHistory("","","","#RANCID-CONTENT-TYPE: alcatellucent\n#\n");
+ProcessHistory("COMMENTS","keysort","B0","#\n");
+#ProcessHistory("COMMENTS","keysort","D0","#\n");
+#ProcessHistory("COMMENTS","keysort","F0","#\n");
+#ProcessHistory("COMMENTS","keysort","G0","#\n");
 TOP: while(<INPUT>) {
     tr/\015//d;
     if (/Connection to [^ ]+ closed\.$/) {
