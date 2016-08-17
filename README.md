@@ -1,3 +1,16 @@
+# Some Rancid stuff
+This repo has a few tweaks or enhancements to [rancid](http://shrubbery.net/rancid) that aren't in the main
+distribution.  Hopefully they will be someday.  They should all work in 2.3.8 or 3.x,
+unless otherwise noted.  Sample tweaks to rancid-fe and rancid.types.conf are here, 
+but I can't provide much more support than that on how to use/integrate (ie,
+if you don't know how to use this, it's probably not right for you).
+
+Please note that this is a work in progress, and is not intended for long-term
+support.  If you're using this code from this source, you're doing so at
+your own risk (it works for me, but is likely to become outdated quickly,
+and it hasn't been widely tested).  But if you do use it, I'd appreciate
+feedback.
+
 # vdxrancid
 This is a slightly updated version of VDXrancid, forked from 
 [buraglio/vdxrancid](https://github.com/buraglio/vdxrancid) and incorporating
@@ -7,12 +20,6 @@ This code is copyleft per the standard rancid license terms.
 
 I've tested this successfully on a handful of VDX6720s on NOS 4.0.0 and 4.0.1,
 but not much else.
-
-Please note that this is a work in progress, and is not intended for long-term
-support.  If you're using this code from this source, you're doing so at
-your own risk (it works for me, but is likely to become outdated quickly,
-and it hasn't been widely tested).  But if you do use it, I'd appreciate
-feedback.
 
 
 # Aerohive Rancid
