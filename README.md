@@ -36,3 +36,10 @@ untested.
 
 ## Nokia/Alcatel-Lucent Rancid
 SROS 7750 alcatel support stuff can be found in ermuller/alurancid
+
+## Ciena SAOS
+This platform looks a lot like the Waveserver stuff (wavesvros), but seems
+to be not quite the same.  This module _should_ support SAOS while being
+backward-compatible with the waveserver stuff.  Without access to the other
+to test though, I'm keeping this separate for now.
+Tested with a number of 3942s on 6.14
