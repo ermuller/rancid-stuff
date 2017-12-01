@@ -35,7 +35,7 @@ not been tested.  Likewise, aerohive switches should be supported, but are
 untested.
 
 ## Nokia/Alcatel-Lucent Rancid
-SROS 7750 alcatel support stuff can be found in ermuller/alurancid
+Old SROS 7750 alcatel support stuff can be found in ermuller/alurancid.  (This is deprecated and replaced/merged with official RANCID support in 3.7)
 
 ## Ciena SAOS
 This platform looks a lot like the Waveserver stuff (wavesvros), but seems
