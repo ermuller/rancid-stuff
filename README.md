@@ -43,3 +43,14 @@ to be not quite the same.  This module _should_ support SAOS while being
 backward-compatible with the waveserver stuff.  Without access to the other
 to test though, I'm keeping this separate for now.
 Tested with a number of 3942s on 6.14
+
+## MRV updates
+MRV OptiDrivers have a nice simple cisco-style config system... except that
+it's incomplete.  Some settings such as amplifier gain or channel assignments
+on tunable optics are applied as normal config changes, but are only stored
+in nvram on the affected module, with no record in the master config.  I've
+added some port parsing so there's at least a record of what these steath
+config items are set to.  "show ports" gives channel ID for tunables, and
+EDFA gain settings.  "show plugins" provides requested tx power on tunables.
+And mrvlogin gets an update to handle the wider screens needed for these.
+Tested on OD v5.12.
