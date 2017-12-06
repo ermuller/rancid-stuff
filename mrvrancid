@@ -255,13 +255,19 @@ sub ShowSlots {
     return(0);
 }
 
+# TODO: check tunable types with variable txpower
+#CFP100GDWIR4TC
+#CFP-100G-DWCHT
+#SFP-10GDWZR-TCME
+#SFP-10GDWZR-TC
+
 # This routine parses "show ports".  We need this for amplifier gain settings and tunable plugin channel assignments
 sub ShowPorts {
     print STDERR "    In ShowPorts: $_" if ($debug);
 
 #wdm1.va1# show ports 
-#Port    Enable  Link           LIN      Protocol  Rate                   DDiags  WL(nm)     Channel  Gain(dB)  Gain desired(dB)  Nam
-#======  ======  =============  =======  ========  =====================  ======  =========  =======  ========  ================  ===
+#Port    Enable  Link           LIN      Protocol  Rate                   DDiags  WL(nm)     Channel  Gain(dB)  Gain desired(dB)  Name              Function
+#======  ======  =============  =======  ========  =====================  ======  =========  =======  ========  ================  ================  =================
 #1.1.1   enable  N/A            N/A      Ethernet  10G-LAN 10.3125 Gbps   N/A     N/A        N/A      N/A       N/A               SFP
 #1.1.2   enable  N/A            N/A      Ethernet  10G-LAN 10.3125 Gbps   N/A     N/A        N/A      N/A       N/A               SFP
 #1.5.1   enable  signal Detect  N/A      Ethernet  100G-LAN 103.125 Gbps  Alarm   1559.7943  C22      N/A       N/A               CFP
@@ -290,8 +296,6 @@ sub ShowPorts {
 
     return(0);
 }
-
-
 
 # This routine processes a "write term"
 sub WriteTerm {
@@ -453,7 +457,6 @@ sub DoNothing {print STDOUT;}
 	{'show version'			=> 'ShowVersion'},
 	{'show chassis'			=> 'ShowChassis'},
 	{'show slots'			=> 'ShowSlots'},
-	#{'show plugins'			=> 'ShowPlugins'},
 	{'show ports'			=> 'ShowPorts'},
 	{'show running-config'		=> 'WriteTerm'}
 );
