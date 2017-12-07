@@ -53,4 +53,14 @@ added some port parsing so there's at least a record of what these steath
 config items are set to.  "show ports" gives channel ID for tunables, and
 EDFA gain settings.  "show plugins" provides requested tx power on tunables.
 And mrvlogin gets an update to handle the wider screens needed for these.
-Tested on OD v5.12.
+Production tested on OD v5.12.
+
+## MRV LX support
+MRV's LX devices run a totally different OS than the other families.  This
+adds basic support for them via a new "mrvlx" platform, with separate
+mrvlxlogin and mrvlxrancid scripts (login can probably be merged with
+mrvlogin, but the pager and prompt differences are annoying enough that
+I didn't want to mess with it this week).  mrvlxrancid grabs the basic
+hardware info you'd expect, as well as a copy of the internal config file
+it uses - it's editable, readable, and restorable, but not copy-n-pasteable.
+Production tested on LX-40xx 6.2.1
