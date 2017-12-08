@@ -282,10 +282,14 @@ sub ShowPorts {
 	next if (/^(\s*|\s*$cmd\s*)$/);
 	return(-1) if (/command authorization failed/i);
 
+	# truncate headers after gain (Name field width varies with longest port name)
+	if (/^(Port\s+.*)  Name\s+Function\s*$/) { ProcessHistory("PORTS","","","!$1\n"); next; }
+	if (/^([=\s]{127})/) { ProcessHistory("PORTS","","","!$1\n"); next; }
+
+	# ignore state, just get properties
 	if (/^([\.0-9]+\s+)(\S.{31})(\S+\s+)(.{22})\s*\S+\s+(\S+\s+)(\S+\s+)(\S+\s+)(\S+\s+)(.*)\s*/) {
 		my ($p,$status,$lin,$info,$wl,$ch,$gain,$tgain,$name) = ($1,$2,$3,$4,$5,$6,$7,$8,$9);
-		# ignore state, just get properties
-		my $line=sprintf("%s--      --             --       %s%s --      %s%s--        %s%s\n",$p,$lin,$info,$wl,$ch,$tgain,$name);
+		my $line=sprintf("%s--      --             --       %s%s --      %s%s--        %s\n",$p,$lin,$info,$wl,$ch,$tgain);
 		ProcessHistory("PORTS","","","!$line");
 		next;
 	}
