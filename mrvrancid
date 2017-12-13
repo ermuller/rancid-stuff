@@ -265,15 +265,21 @@ sub ShowSlots {
 sub ShowPorts {
     print STDERR "    In ShowPorts: $_" if ($debug);
 
+# note field width will vary with changes in content.  Link and Name columns, eg
 #wdm1.va1# show ports 
 #Port    Enable  Link           LIN      Protocol  Rate                   DDiags  WL(nm)     Channel  Gain(dB)  Gain desired(dB)  Name              Function
 #======  ======  =============  =======  ========  =====================  ======  =========  =======  ========  ================  ================  =================
-#1.1.1   enable  N/A            N/A      Ethernet  10G-LAN 10.3125 Gbps   N/A     N/A        N/A      N/A       N/A               SFP
-#1.1.2   enable  N/A            N/A      Ethernet  10G-LAN 10.3125 Gbps   N/A     N/A        N/A      N/A       N/A               SFP
-#1.5.1   enable  signal Detect  N/A      Ethernet  100G-LAN 103.125 Gbps  Alarm   1559.7943  C22      N/A       N/A               CFP
-#1.30.3  enable  signal Detect  N/A      N/A       N/A                    Ok      N/A        N/A      20.92     20                LC
-#---------!---------!---------!---------!---------!---------!---------!---------!---------!---------!---------!---------!---------!---------!
-#                               
+#1.1.1   enable  N/A            N/A      Ethernet  10G-LAN 10.3125 Gbps   N/A     N/A        N/A      N/A       N/A               SFP at 1.1.1
+#1.5.1   enable  signal Detect  N/A      Ethernet  100G-LAN 103.125 Gbps  Alarm   1559.7943  C22      N/A       N/A               CFP at 1.5.1
+#1.3.6   N/A     N/A            N/A      N/A       N/A                    Ok      1559.7943  C22      N/A       N/A               LC at 1.3.6       mux_dmux 
+#1.30.3  enable  signal Detect  N/A      N/A       N/A                    Ok      N/A        N/A      20.92     20                LC at 1.30.3      EDFA INPUT/OUTPUT
+#Port    Enable  Link       LIN      Protocol  Rate                   DDiags  WL(nm)     Channel  Gain(dB)  Gain desired(dB)  Name                                  
+#======  ======  =========  =======  ========  =====================  ======  =========  =======  ========  ================  ======================================
+#1.1.13  enable  no Signal  N/A      OTN       OTU4 111.81 Gbps       Alarm   1560.606   C21      N/A       N/A               CFP at 1.1.13 with a very very long name                        
+#Port    Enable  Link           LIN      Protocol  Rate                   DDiags  WL(nm)     Channel  Gain(dB)  Gain desired(dB)  Name                                                Function           
+#======  ======  =============  =======  ========  =====================  ======  =========  =======  ========  ================  ==================================================  =================
+#1.30.3  enable  signal Detect  N/A      N/A       N/A                    Ok      N/A        N/A      26.23     23                port name SFP at 1.1.5 with a very very vlong name  EDFA INPUT/OUTPUT 
+    my ($header, @equals,@format,$re, $lineformat);
     while (<INPUT>) {
 	tr/\015//d;
 	return if (/^\s*\^$/);
@@ -282,21 +288,50 @@ sub ShowPorts {
 	next if (/^(\s*|\s*$cmd\s*)$/);
 	return(-1) if (/command authorization failed/i);
 
-	# truncate headers after gain (Name field width varies with longest port name)
-	if (/^(Port\s+.*)  Name\s+Function\s*$/) { ProcessHistory("PORTS","","","!$1\n"); next; }
-	if (/^([=\s]{127})/) { ProcessHistory("PORTS","","","!$1\n"); next; }
-
-	# ignore state, just get properties
-	if (/^([\.0-9]+\s+)(\S.{31})(\S+\s+)(.{22})\s*\S+\s+(\S+\s+)(\S+\s+)(\S+\s+)(\S+\s+)(.*)\s*/) {
-		my ($p,$status,$lin,$info,$wl,$ch,$gain,$tgain,$name) = ($1,$2,$3,$4,$5,$6,$7,$8,$9);
-		my $line=sprintf("%s--      --             --       %s%s --      %s%s--        %s\n",$p,$lin,$info,$wl,$ch,$tgain);
-		ProcessHistory("PORTS","","","!$line");
+	# Save the headers
+	if (/^(Port\s+.*)$/) { $header = $1; next; }
+	# Grab the subheader delimiters
+	if (/^=/) {
+		#Grab all 13 fields
+		if (@equals= /^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/) {
+			@format = map { length($_) } @equals;
+			# and we'll keep the ones we care about, truncating any long names
+			# 0 1 4 5 7 8 10 11 = port status proto rate wl chan targetgain name
+			$lineformat = "%-${format[0]}s  %-${format[1]}s  %-${format[4]}s  %-${format[5]}s  %-${format[7]}s  %-${format[8]}s  %-${format[10]}s  %-32.32s\n";
+			my $newline=sprintf($lineformat,$equals[0], $equals[1], $equals[4], $equals[5], $equals[7], $equals[8], $equals[10], ('=' x 32));
+			ProcessHistory("PORTS","keysort","A2","!$newline");
+			# assemble a matcher based on the observed field widths
+			$re = '^(\S.{'.($format[0]-1).'})';
+			for (my $i=1; $i <= 11; $i++) {
+				$re .= '\s\s(\S.{'.($format[$i]-1).'})';
+			}
+			# last field might be blank
+			$re .= '\s\s(.{'.$format[12].'})';
+			$re .= '.*$';
+			$re=qr/$re/;
+			#print STDERR "    re is $re\n" if ($debug);	
+			# now reassemble the labels now that we know the field sizes
+			if ($header =~ /$re/) {
+				my $newline=sprintf($lineformat,$1, $2, $5, $6, $8, $9, $11, $12);
+				ProcessHistory("PORTS","keysort","A1","!$newline");
+			}
+		}
 		next;
 	}
-	ProcessHistory("PORTS","","","!$_");
+	# process actual port lines if we've found the fieldsize info we need
+	if ((@equals) && /^[0-9]+/) {
+		($p,$status,$link,$lin,$proto,$rate,$diag,$wl,$ch,$gain,$tgain,$name) = /$re/;
+		if (defined($p)) {
+			my $newline=sprintf($lineformat,$p,$status,$proto,$rate,$wl,$ch, $tgain, $name);
+			ProcessHistory("PORTS","keysort","A3","!$newline");
+		}
+		next;
+	}
+
+	ProcessHistory("PORTS","keysort","B1","!$_");
 	next;
     }
-    ProcessHistory("PORTS","","","!\n");
+    ProcessHistory("PORTSDONE","","","!\n");
 
     return(0);
 }

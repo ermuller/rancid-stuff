@@ -854,7 +854,7 @@ foreach router [lrange $argv $i end] {
     if { $do_command || $do_script } {
 	send -h "terminal length 0\r"
 	expect -re $prompt	{}
-	send -h "terminal width 180\r"
+	send -h "terminal width 200\r"
 	expect -re $prompt	{}
 	send -h "no cli-paging\r"
 	expect -re $prompt	{}
