@@ -365,7 +365,7 @@ sub WriteTerm {
 
 	# skip consecutive comment lines to avoid oscillating extra comment
 	# line on some access servers.  grrr.
-	if (/^!/) {
+	if (/^!\s*$/) {
 	    next if ($comment);
 	    ProcessHistory("","","",$_);
 	    $comment++;
@@ -453,7 +453,14 @@ sub WriteTerm {
 	    }
 	    next;
 	}
-	if (/^(snmp-server community) (\S+)/) {
+	if (/^(snmp-server community) (read|write) encrypted (\S+)/) {
+	    if ($filter_commstr) {
+		ProcessHistory("SNMPSERVERCOMM","keysort","$_",
+			       "!$1 $2 encrypted <removed>$'") && next;
+	    } else {
+		ProcessHistory("SNMPSERVERCOMM","keysort","$_","$_") && next;
+	    }
+	} elsif (/^(snmp-server community) (\S+)/) {
 	    if ($filter_commstr) {
 		ProcessHistory("SNMPSERVERCOMM","keysort","$_",
 			       "!$1 <removed>$'") && next;
