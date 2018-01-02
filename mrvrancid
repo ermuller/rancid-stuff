@@ -279,7 +279,11 @@ sub ShowPorts {
 #Port    Enable  Link           LIN      Protocol  Rate                   DDiags  WL(nm)     Channel  Gain(dB)  Gain desired(dB)  Name                                                Function           
 #======  ======  =============  =======  ========  =====================  ======  =========  =======  ========  ================  ==================================================  =================
 #1.30.3  enable  signal Detect  N/A      N/A       N/A                    Ok      N/A        N/A      26.23     23                port name SFP at 1.1.5 with a very very vlong name  EDFA INPUT/OUTPUT 
-    my ($header, @equals,@format,$re, $lineformat);
+#
+# Oh, and that "LIN" column? Totally optional.
+# Doesn't appear unless you have a muxponder card installed and active.
+    my ($header, @equals,@fmt,$re, $lineformat);
+    my $hasLIN=0;
     while (<INPUT>) {
 	tr/\015//d;
 	return if (/^\s*\^$/);
@@ -292,27 +296,44 @@ sub ShowPorts {
 	if (/^(Port\s+.*)$/) { $header = $1; next; }
 	# Grab the subheader delimiters
 	if (/^=/) {
-		#Grab all 13 fields
-		if (@equals= /^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/) {
-			@format = map { length($_) } @equals;
+		#Grab all 12-13 fields
+		if (@equals= /^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)?/) {
+			@fmt = map { length($_) } @equals;
+			# adjust our expectations based on the header contents
+			my $fieldmax=11;
+			if ($header =~ /\bLIN\b/) {
+				$fieldmax++;
+				$hasLIN=1;
+			}
 			# and we'll keep the ones we care about, truncating any long names
 			# 0 1 4 5 7 8 10 11 = port status proto rate wl chan targetgain name
-			$lineformat = "%-${format[0]}s  %-${format[1]}s  %-${format[4]}s  %-${format[5]}s  %-${format[7]}s  %-${format[8]}s  %-${format[10]}s  %-32.32s\n";
-			my $newline=sprintf($lineformat,$equals[0], $equals[1], $equals[4], $equals[5], $equals[7], $equals[8], $equals[10], ('=' x 32));
+			my $newline;
+			if ($hasLIN) {
+				$lineformat = "%-${fmt[0]}s  %-${fmt[1]}s  %-${fmt[4]}s  %-${fmt[5]}s  %-${fmt[7]}s  %-${fmt[8]}s  %-${fmt[10]}s  %-32.32s\n";
+				$newline=sprintf($lineformat,$equals[0], $equals[1], $equals[4], $equals[5], $equals[7], $equals[8], $equals[10], ('=' x 32));
+			} else {
+				$lineformat = "%-${fmt[0]}s  %-${fmt[1]}s  %-${fmt[3]}s  %-${fmt[4]}s  %-${fmt[6]}s  %-${fmt[7]}s  %-${fmt[9]}s  %-32.32s\n";
+				$newline=sprintf($lineformat,$equals[0], $equals[1], $equals[3], $equals[4], $equals[6], $equals[7], $equals[9], ('=' x 32));
+			}
 			ProcessHistory("PORTS","keysort","A2","!$newline");
 			# assemble a matcher based on the observed field widths
-			$re = '^(\S.{'.($format[0]-1).'})';
-			for (my $i=1; $i <= 11; $i++) {
-				$re .= '\s\s(\S.{'.($format[$i]-1).'})';
+			$re = '^(\S.{'.($fmt[0]-1).'})';
+			for (my $i=1; $i <= ($fieldmax - 1); $i++) {
+				$re .= '\s\s(\S.{'.($fmt[$i]-1).'})';
 			}
 			# last field might be blank
-			$re .= '\s\s(.{'.$format[12].'})';
+			$re .= '\s\s(.{'.$fmt[$fieldmax].'})';
 			$re .= '.*$';
 			$re=qr/$re/;
 			#print STDERR "    re is $re\n" if ($debug);	
 			# now reassemble the labels now that we know the field sizes
 			if ($header =~ /$re/) {
-				my $newline=sprintf($lineformat,$1, $2, $5, $6, $8, $9, $11, $12);
+				my $newline;
+				if ($hasLIN) {
+					$newline=sprintf($lineformat,$1, $2, $5, $6, $8, $9, $11, $12);
+				} else {
+					$newline=sprintf($lineformat,$1, $2, $4, $5, $7, $8, $10, $11);
+				}
 				ProcessHistory("PORTS","keysort","A1","!$newline");
 			}
 		}
@@ -320,7 +341,12 @@ sub ShowPorts {
 	}
 	# process actual port lines if we've found the fieldsize info we need
 	if ((@equals) && /^[0-9]+/) {
-		($p,$status,$link,$lin,$proto,$rate,$diag,$wl,$ch,$gain,$tgain,$name) = /$re/;
+		my ($p,$status,$link,$lin,$proto,$rate,$diag,$wl,$ch,$gain,$tgain,$name);
+		if ($hasLIN) {
+			($p,$status,$link,$lin,$proto,$rate,$diag,$wl,$ch,$gain,$tgain,$name) = /$re/;
+		} else {
+			($p,$status,$link,$proto,$rate,$diag,$wl,$ch,$gain,$tgain,$name) = /$re/;
+		}
 		if (defined($p)) {
 			my $newline=sprintf($lineformat,$p,$status,$proto,$rate,$wl,$ch, $tgain, $name);
 			ProcessHistory("PORTS","keysort","A3","!$newline");
