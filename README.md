@@ -21,19 +21,6 @@ a few updates, fixes, and cleanups.  It should work with an unmodified clogin.
 I've tested this successfully on a handful of VDX6720s on NOS 4.0.0 and 4.0.1,
 but not much else.
 
-
-## Aerohive Rancid
-Also, basic aerohive support is added here via the "ahlogin" and "ahrancid"
-scripts.
-These are based on clogin/rancid from 2.3.8.
-The login diffs are mainly just to send "console page 0" and to handle the
-"config changed, save?" prompts.
-
-This has been running in production for several years, though only
-on a single deployment of AP170s - other models should work, but have
-not been tested.  Likewise, aerohive switches should be supported, but are
-untested.
-
 ## Nokia/Alcatel-Lucent Rancid
 Old SROS 7750 alcatel support stuff can be found in ermuller/alurancid.  (This is deprecated and replaced/merged with official RANCID support in 3.7)
 
@@ -54,6 +41,7 @@ config items are set to.  "show ports" gives channel ID for tunables, and
 EDFA gain settings.  "show plugins" provides requested tx power on tunables.
 And mrvlogin gets an update to handle the wider screens needed for these.
 Production tested on OD v5.12.
+Note that rancid user needs at least super perms to collect running config.
 
 ## MRV LX support
 MRV's LX devices run a totally different OS than the other families.  This
@@ -64,3 +52,19 @@ I didn't want to mess with it this week).  mrvlxrancid grabs the basic
 hardware info you'd expect, as well as a copy of the internal config file
 it uses - it's editable, readable, and restorable, but not copy-n-pasteable.
 Production tested on LX-40xx 6.2.1
+
+## Aerohive Rancid
+*Note* - this is old and you prbably don't want to use it - I no longer have
+access to any Aerohive environment for further development or testing.
+You should probably check out [nphobia/rancid-aerohive-support](https://github.com/inphobia/rancid-aerohive-support) instead.
+Also, basic aerohive support is added here via the "ahlogin" and "ahrancid"
+scripts.
+These are based on clogin/rancid from 2.3.8.
+The login diffs are mainly just to send "console page 0" and to handle the
+"config changed, save?" prompts.
+
+This has been running in production for several years, though only
+on a single deployment of AP170s - other models should work, but have
+not been tested.  Likewise, aerohive switches should be supported, but are
+untested.
+
