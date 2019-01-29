@@ -54,10 +54,11 @@ it uses - it's editable, readable, and restorable, but not copy-n-pasteable.
 Production tested on LX-40xx 6.2.1
 
 ## Aerohive Rancid
-*Note* - this is old and you prbably don't want to use it - I no longer have
+*Note* - this is old and you probably don't want to use it - I no longer have
 access to any Aerohive environment for further development or testing.
-You should probably check out [nphobia/rancid-aerohive-support](https://github.com/inphobia/rancid-aerohive-support) instead.
-Also, basic aerohive support is added here via the "ahlogin" and "ahrancid"
+You should probably check out [inphobia/rancid-aerohive-support](https://github.com/inphobia/rancid-aerohive-support) instead.
+
+Basic aerohive support is added here via the "ahlogin" and "ahrancid"
 scripts.
 These are based on clogin/rancid from 2.3.8.
 The login diffs are mainly just to send "console page 0" and to handle the
