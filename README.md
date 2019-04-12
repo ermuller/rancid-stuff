@@ -21,15 +21,12 @@ a few updates, fixes, and cleanups.  It should work with an unmodified clogin.
 I've tested this successfully on a handful of VDX6720s on NOS 4.0.0 and 4.0.1,
 but not much else.
 
-## Nokia/Alcatel-Lucent Rancid
-Old SROS 7750 alcatel support stuff can be found in ermuller/alurancid.  (This is deprecated and replaced/merged with official RANCID support in 3.7)
-
 ## Ciena SAOS
 This platform looks a lot like the Waveserver stuff (wavesvros), but seems
 to be not quite the same.  This module _should_ support SAOS while being
 backward-compatible with the waveserver stuff.  Without access to the other
 to test though, I'm keeping this separate for now.
-Tested with a number of 3942s on 6.14
+Tested with a number of 3904/3942s on 6.14.
 
 ## MRV updates
 MRV OptiDrivers have a nice simple cisco-style config system... except that
@@ -53,6 +50,11 @@ hardware info you'd expect, as well as a copy of the internal config file
 it uses - it's editable, readable, and restorable, but not copy-n-pasteable.
 Production tested on LX-40xx 6.2.1
 
+# Deprecated stuff
+These bits are no longer maintained, and either supplanted by official
+support, or it's been so long since I've used/tested them that I can't
+give any sort of confident suggestion that they should work. 
+
 ## Aerohive Rancid
 *Note* - this is old and you probably don't want to use it - I no longer have
 access to any Aerohive environment for further development or testing.
@@ -68,4 +70,7 @@ This has been running in production for several years, though only
 on a single deployment of AP170s - other models should work, but have
 not been tested.  Likewise, aerohive switches should be supported, but are
 untested.
+
+## Nokia/Alcatel-Lucent Rancid
+Old SROS 7750 alcatel support stuff can be found in ermuller/alurancid.  (This is deprecated and replaced/merged with official RANCID support in 3.7)
 
