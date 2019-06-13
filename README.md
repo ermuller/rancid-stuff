@@ -50,6 +50,19 @@ hardware info you'd expect, as well as a copy of the internal config file
 it uses - it's editable, readable, and restorable, but not copy-n-pasteable.
 Production tested on LX-40xx 6.2.1
 
+## FXOS stuff
+Cisco FXOS is a terrible thing.  Avoid it.
+But sometimes you can't avoid it.  With FPR2100 appliances, running FTD code,
+initial support is provided in mainline rancid 3.9.  FPR2100s running ASA
+code are, of course, totally different.  Some beta support for those is here.
+Note that the ASA component still looks pretty much like a classic ASA, it's
+just the FPR platform support via the fxos manager that's missing, and added
+in here.  For these devices, you'll have two separate devices being monitored:
+the ASA, and the FXOS underlay.
+Other FPR platforms (4xxx,9xxx) are still more different, and are not yet
+supported.
+
+
 # Deprecated stuff
 These bits are no longer maintained, and either supplanted by official
 support, or it's been so long since I've used/tested them that I can't
